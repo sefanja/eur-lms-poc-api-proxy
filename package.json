@@ -1,0 +1,30 @@
+{
+  "name": "eur-lms-poc-api-proxy",
+  "version": "0.0.1",
+  "description": "An API-proxy that sits between the university's service bus and the LMS's API.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "gulp dev",
+    "start": "node server.js",
+    "test": "jshint ."
+  },
+  "author": "Erasmus University Rotterdam",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-cli": "^1.2.1",
+    "gulp-env": "^0.4.0",
+    "gulp-nodemon": "^2.1.0",
+    "jshint": "^2.9.2",
+    "openssl-self-signed-certificate": "^1.1.4"
+  },
+  "dependencies": {
+    "async": "^2.1.2",
+    "body-parser": "^1.15.2",
+    "cookie-parser": "^1.4.3",
+    "ejs": "^2.4.2",
+    "express": "^4.14.0",
+    "lodash": "^4.16.6",
+    "superagent": "^2.0.0"
+  }
+}
