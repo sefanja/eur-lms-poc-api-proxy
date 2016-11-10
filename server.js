@@ -109,9 +109,9 @@ app.get('/upsert-courseoffering', function(req, response) {
 
     // Would be nicer to fill this variable dynamically instead of hardcoded, but this suffices for now.
     var SisCourseOffering = {
-        "Code": "sef6",
-        "Name": "Sefanja's Course 6",
-        "AcademicYear": 2015
+        "Code": "sef7",
+        "Name": "Sefanja's Course 7",
+        "AcademicYear": 2016
     };
 
     upsertCourseOffering(SisCourseOffering, access_token, postResponse);
@@ -392,6 +392,7 @@ function getOrgUnitType(code, access_token, callback) {
 
     // Use caching to prevent unnecessary calls.
     if (cache[url]) {
+        console.log('[FROM CACHE] GET ' + url);
         handleResult(cache[url]);
     } else {
         console.log('GET ' + url);

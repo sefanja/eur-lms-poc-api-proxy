@@ -4,7 +4,7 @@ var env = require('gulp-env');
 
 gulp.task('dev', function() {
     env({
-        file: 'config.json'
+        file: '.devenv.json'
     });
 
     nodemon({
