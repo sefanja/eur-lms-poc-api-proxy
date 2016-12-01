@@ -169,8 +169,7 @@ app.get('/upsert-user', function(req, response) {
 });
 
 /*
- * Simulate an upsert of a user from the Identity Management system.
- * We should use a put etc., but this is easier for now.
+ * Simulate an delete of a user from the Identity Management system.
  */
 app.get('/delete-user', function(req, response) {
     var access_token = req.cookies[cookieName].accessToken;
@@ -603,7 +602,7 @@ function getId(item) {
 }
 
 /**
- * UpSert (update/insert) an user from IdM.
+ * UpSert (update/insert) a user from IdM.
  * @returns the user, whether untouched, updated or inserted.
  */
 function upsertUser(idmUser, access_token, callback) {
@@ -620,7 +619,7 @@ function upsertUser(idmUser, access_token, callback) {
 }
 
 /**
- * Delete an user from brightspace.
+ * Delete a user from brightspace.
  */
 function deleteUser(idmUser, access_token, callback) {
     // If user exists: update, else: insert.
@@ -643,7 +642,7 @@ function deleteUser(idmUser, access_token, callback) {
 }
 
 /**
- * Get an user from brightspace
+ * Get a user from brightspace
  */
 function getUser(idmUser, access_token, callback) {
     var url = process.env.HOST_URL
