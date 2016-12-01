@@ -603,8 +603,8 @@ function getId(item) {
 }
 
 /**
- * UpSert (update/insert) a course offering from the SIS.
- * @returns the course offering, whether untouched, updated or inserted.
+ * UpSert (update/insert) an user from IdM.
+ * @returns the user, whether untouched, updated or inserted.
  */
 function upsertUser(idmUser, access_token, callback) {
     // If user exists: update, else: insert.
@@ -620,8 +620,7 @@ function upsertUser(idmUser, access_token, callback) {
 }
 
 /**
- * UpSert (update/insert) a course offering from the SIS.
- * @returns the course offering, whether untouched, updated or inserted.
+ * Delete an user from brightspace.
  */
 function deleteUser(idmUser, access_token, callback) {
     // If user exists: update, else: insert.
@@ -643,6 +642,9 @@ function deleteUser(idmUser, access_token, callback) {
     });
 }
 
+/**
+ * Get an user from brightspace
+ */
 function getUser(idmUser, access_token, callback) {
     var url = process.env.HOST_URL
         + '/d2l/api/lp/1.10/users/?userName=' + idmUser.UserName;
@@ -656,6 +658,9 @@ function getUser(idmUser, access_token, callback) {
         });
 }
 
+/**
+ * Insert a given user from IdM
+ */
 function insertUser(idmUser, access_token, callback) {
     async.parallel({
         orgInfo: function(callback) {
@@ -687,6 +692,9 @@ function insertUser(idmUser, access_token, callback) {
     });
 }
 
+/**
+ * Update a given user
+ */
 function updateUser(user, idmUser, access_token, callback) {
     // Leave existing fields untouched.
     var newUser = user;
@@ -710,6 +718,10 @@ function updateUser(user, idmUser, access_token, callback) {
         });
 }
 
+/**
+ * Get the list of available roles
+ * @returns list of roles
+ */
 function getRoles(access_token, callback) {
     var url = process.env.HOST_URL
         + '/d2l/api/lp/1.10/roles/';
@@ -723,6 +735,10 @@ function getRoles(access_token, callback) {
         });
 }
 
+/**
+ * Get organisation info
+ * @returns the info of the organisation
+ */
 function getOrgInfo(access_token, callback) {
     var url = process.env.HOST_URL
         + '/d2l/api/lp/1.10/organization/info';
