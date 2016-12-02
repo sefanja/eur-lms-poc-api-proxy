@@ -1,0 +1,4 @@
+[
+  { "UserName": "j.doe", "FirstName": "John", "LastName": "Doe", "ExternalEmail": "john.doe@example.com", "Role": "Student" },
+  { "UserName": "mrs.smith", "FirstName": "Mrs.", "LastName": "Smith", "ExternalEmail": "mrs.smith@example.com", "Role": "Instructor" }
+]

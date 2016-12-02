@@ -5,7 +5,8 @@ var express = require('express'),
     _ = require('lodash'),
     async = require('async'),
     querystring = require('querystring'),
-    request = require('superagent');
+    request = require('superagent'),
+    fs = require('fs');
 
 var port = process.env.PORT || 3000;
 
@@ -115,6 +116,121 @@ app.get('/upsert-courseoffering', function(req, response) {
     };
 
     upsertCourseOffering(SisCourseOffering, access_token, postResponse);
+
+    function postResponse(err, result) {
+        if (err) {
+            console.log(err);
+            response.send(`<pre>${err}</pre>`);
+        } else {
+            response.json(result);
+        }
+    }
+});
+
+/*
+ * Simulate an upsert of a user from the Identity Management system.
+ * We should use a put etc., but this is easier for now.
+ */
+app.get('/upsert-user', function(req, response) {
+    var access_token = req.cookies[cookieName].accessToken;
+
+    fs.readFile('input/users.json', handleFile);
+
+    function handleFile(err, data) {
+        if (err) throw err;
+
+        var users = JSON.parse(data);
+
+        var userCount = users.length;
+        console.log('Processing users: ' + userCount);
+        users.forEach(function (user) {
+            user.OrgDefinedId = "";
+            user.MiddleName = "";
+            user.IsActive = true;
+            user.SendCreationEmail= false;
+
+            upsertUser(user, access_token, postResponse);
+
+            function postResponse(err, result) {
+                if (err) {
+                    response.write(`<pre>${err}</pre>`);
+                } else {
+                    var json = JSON.stringify(result);
+                    response.write(`<pre>${json}</pre>`);
+                }
+
+                userCount--;
+                if (userCount == 0) {
+                    response.end();
+                }
+            }
+        });
+    }
+});
+
+/*
+ * Simulate an delete of a user from the Identity Management system.
+ */
+app.get('/delete-user', function(req, response) {
+    var access_token = req.cookies[cookieName].accessToken;
+
+    fs.readFile('input/users.json', handleFile);
+
+    function handleFile(err, data) {
+        if (err) throw err;
+
+        var users = JSON.parse(data);
+
+        var userCount = users.length;
+        console.log('Processing users: ' + userCount);
+        users.forEach(function (user) {
+
+            deleteUser(user, access_token, postResponse);
+
+            function postResponse(err, result) {
+                if (err) {
+                    response.write(`<pre>${err}</pre>`);
+                } else {
+                    var json = JSON.stringify(result);
+                    response.write(`<pre>${json}</pre>`);
+                }
+
+                userCount--;
+                if (userCount == 0) {
+                    response.end();
+                }
+            }
+        });
+    }
+});
+
+/*
+ * Simulate an upsert of a user from the Identity Management system.
+ * We should use a put etc., but this is easier for now.
+ */
+app.get('/get-roles', function(req, response) {
+    var access_token = req.cookies[cookieName].accessToken;
+
+    getRoles(access_token, postResponse);
+
+    function postResponse(err, result) {
+        if (err) {
+            console.log(err);
+            response.send(`<pre>${err}</pre>`);
+        } else {
+            response.json(result);
+        }
+    }
+});
+
+/*
+ * Simulate an upsert of a user from the Identity Management system.
+ * We should use a put etc., but this is easier for now.
+ */
+app.get('/get-orginfo', function(req, response) {
+    var access_token = req.cookies[cookieName].accessToken;
+
+    getOrgInfo(access_token, postResponse);
 
     function postResponse(err, result) {
         if (err) {
@@ -435,6 +551,9 @@ function getPaginated(url, access_token, callback) {
         if (result && result.body && result.body.Items) {
             items = items.concat(result.body.Items);
         }
+        else if (result && result.body && Array.isArray(result.body)) {
+            items = items.concat(result.body);
+        }
 
         if (err && err.status === 404) {
             return callback(null, items); // Empty items list.
@@ -442,7 +561,7 @@ function getPaginated(url, access_token, callback) {
             return callback(err);
         }
 
-        if (result.body.PagingInfo.HasMoreItems) {
+        if (result.body.PagingInfo && result.body.PagingInfo.HasMoreItems) {
             var bookmark = result.body.PagingInfo.Bookmark;
             var nextUrl = url + (url.includes('?') ? '&' : '?') + 'bookmark=' + encodeURIComponent(bookmark);
             console.log('GET ' + nextUrl);
@@ -480,6 +599,173 @@ function getExactMatch(items, filter, callback) {
  */
 function getId(item) {
     return item.Id ? item.Id : item.Identifier;
+}
+
+/**
+ * UpSert (update/insert) a user from IdM.
+ * @returns the user, whether untouched, updated or inserted.
+ */
+function upsertUser(idmUser, access_token, callback) {
+    // If user exists: update, else: insert.
+    getUser(idmUser, access_token, function(err, user) {
+        if (err && err.status != 404) return callback(err);
+
+        if (!user || (err && err.status == 404)) {
+            insertUser(idmUser, access_token, callback);
+        } else {
+            updateUser(user, idmUser, access_token, callback);
+        }
+    });
+}
+
+/**
+ * Delete a user from brightspace.
+ */
+function deleteUser(idmUser, access_token, callback) {
+    // If user exists: update, else: insert.
+    getUser(idmUser, access_token, function(err, user) {
+        if (err) return callback(err);
+
+        if (user ) {
+            var url = process.env.HOST_URL
+                + '/d2l/api/lp/1.10/users/' + user.UserId;
+
+            console.log('DELETE ' + url);
+            request
+                .delete(url)
+                .set('Authorization', `Bearer ${access_token}`)
+                .end(function(err, result) {
+                    callback(err, result.body);
+                });
+        }
+    });
+}
+
+/**
+ * Get a user from brightspace
+ */
+function getUser(idmUser, access_token, callback) {
+    var url = process.env.HOST_URL
+        + '/d2l/api/lp/1.10/users/?userName=' + idmUser.UserName;
+
+    console.log('GET ' + url);
+    request
+        .get(url)
+        .set('Authorization', `Bearer ${access_token}`)
+        .end(function(err, result) {
+            callback(err, result.body);
+        });
+}
+
+/**
+ * Insert a given user from IdM
+ */
+function insertUser(idmUser, access_token, callback) {
+    async.parallel({
+        orgInfo: function(callback) {
+            getOrgInfo(access_token, callback);
+        },
+        role: function(callback) {
+            getRole(idmUser.Role, access_token, callback);
+        }
+    },
+    function(err, results) {
+        if (err) return callback(err);
+
+        var newUser = idmUser;
+        newUser.OrgId = getId(results.orgInfo);
+        newUser.RoleId = getId(results.role);
+        delete newUser.Role;
+
+        // Send the insert.
+        var url = process.env.HOST_URL
+            + '/d2l/api/lp/1.10/users/';
+        console.log('POST ' + url);
+        request
+            .post(url)
+            .set('Authorization', `Bearer ${access_token}`)
+            .send(newUser)
+            .end(function(err, result) {
+                callback(err, result.body);
+            });
+    });
+}
+
+/**
+ * Update a given user
+ */
+function updateUser(user, idmUser, access_token, callback) {
+    // Leave existing fields untouched.
+    var newUser = user;
+
+    // Change the fields to be updated.
+    newUser.FirstName = idmUser.FirstName;
+    newUser.MiddleName = idmUser.MiddleName;
+    newUser.LastName = idmUser.LastName;
+    newUser.ExternalEmail = idmUser.ExternalEmail;
+
+    // Send the update.
+    var url = process.env.HOST_URL
+        + '/d2l/api/lp/1.10/users/' + user.UserId;
+    console.log('PUT ' + url);
+    request
+        .put(url)
+        .set('Authorization', `Bearer ${access_token}`)
+        .send(newUser)
+        .end(function(err, result) {
+            callback(err, result.body);
+        });
+}
+
+/**
+ * Get the list of available roles
+ * @returns list of roles
+ */
+function getRoles(access_token, callback) {
+    var url = process.env.HOST_URL
+        + '/d2l/api/lp/1.10/roles/';
+
+    console.log('GET ' + url);
+    request
+        .get(url)
+        .set('Authorization', `Bearer ${access_token}`)
+        .end(function(err, result) {
+            callback(err, result.body);
+        });
+}
+
+/**
+ * Get organisation info
+ * @returns the info of the organisation
+ */
+function getOrgInfo(access_token, callback) {
+    var url = process.env.HOST_URL
+        + '/d2l/api/lp/1.10/organization/info';
+
+    console.log('GET ' + url);
+    request
+        .get(url)
+        .set('Authorization', `Bearer ${access_token}`)
+        .end(function(err, result) {
+            callback(err, result.body);
+        });
+}
+
+/**
+ * Get a role by its name.
+ * @returns the role for the given name or null if there is none.
+ */
+function getRole(name, access_token, callback) {
+    var url = process.env.HOST_URL
+        + '/d2l/api/lp/1.10/roles/';
+
+    // Multiple results are possible since orgUnitNames are not unique and are matched as a substring.
+    getPaginated(url, access_token, function(err, roles) {
+        if (err) return callback(err);
+
+        // Narrow the results down to one exact match.
+        getExactMatch(roles, {DisplayName: name}, callback);
+    });
 }
 
 app.listen(port);
